@@ -40,3 +40,34 @@ def register_routes(app):
             "last_update": LAST_UPDATE.isoformat() if LAST_UPDATE else None,
             "symbols": len(SYMBOLS)
         })
+
+    @app.route("/api/debug/available")
+    def available_symbols_with_status():
+        folder = "crypto_data"
+        results = []
+
+        for file in os.listdir(folder):
+            if file.endswith(".csv"):
+                symbol = file.replace(".csv", "")
+                path = os.path.join(folder, file)
+                try:
+                    df = pd.read_csv(path)
+                    if df.empty or len(df) < 30:
+                        results.append({"symbol": symbol, "status": "too few rows"})
+                        continue
+
+                    required = {"open", "high", "low", "close", "volume"}
+                    if not required.issubset(set(df.columns)):
+                        results.append({"symbol": symbol, "status": "missing columns"})
+                        continue
+
+                    pred = get_ai_prediction(symbol, client)
+                    if not pred or "current_price" not in pred or "predicted_price" not in pred:
+                        results.append({"symbol": symbol, "status": "missing values"})
+                    else:
+                        results.append({"symbol": symbol, "status": "ok"})
+
+                except Exception as e:
+                    results.append({"symbol": symbol, "status": f"error: {str(e)}"})
+
+        return jsonify(results)

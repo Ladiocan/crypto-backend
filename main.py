@@ -6,13 +6,16 @@ import time
 import schedule
 from api_routes import register_routes
 from model_core import update_historical_data
+import os
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Flask app
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, resources={r"/*": {"origins": ["https://crypto-app.ciocan.eu"]}})
+
 register_routes(app)
 
 def run_scheduler():
@@ -31,7 +34,5 @@ def start():
 
 if __name__ == "__main__":
     Thread(target=start, daemon=True).start()
-    import os
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
-
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
